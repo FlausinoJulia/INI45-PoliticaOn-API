@@ -3,7 +3,8 @@ const sql = require('mssql')
 
 async function conectarAoBd ()
 {
-   try {
+   try 
+   {
       const pool = await sql.connect(bdconfig)
       return pool
    }

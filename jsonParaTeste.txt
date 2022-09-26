@@ -6,3 +6,10 @@
 	"idEstado": 6,
 	"email": "geraldo@gmail.com"
 }
+
+{
+	"nome": "Alicia",
+	"senha": "arvoresbinerecursao",
+	"idEstado": 5,
+	"email": "alicia@gmail.com"
+}
