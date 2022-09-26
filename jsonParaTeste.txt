@@ -1,0 +1,8 @@
+# Post
+
+{
+	"nome": "Geraldo",
+	"senha": "1234567",
+	"idEstado": 6,
+	"email": "geraldo@gmail.com"
+}
