@@ -13,3 +13,12 @@
 	"idEstado": 5,
 	"email": "alicia@gmail.com"
 }
+
+# Put
+
+{
+	"nome":"Geraldo",
+	"senha":"",
+	"idEstado":0,
+	"email":"geraldo@gmail.com"
+}

@@ -7,7 +7,7 @@ const getUsuarios = async (req, res) => {
     {
         const pool = await conectarAoBd()
         const result = await pool.request().query('SELECT * FROM [politicaOn].[Usuario]')
-    
+
         res.json(result.recordset)
     }
     catch (erro)
@@ -29,6 +29,9 @@ const getUsuario = async (req, res) => {
                                  .input("id", id)
                                  .query('SELECT * FROM politicaOn.Usuario WHERE id=@id')
     
+        if(result.recordset[0] == null)
+            return res.json({msg: "Usuário não está cadastrado"})
+
         return res.json(result.recordset[0])
     }
     catch (erro)
@@ -44,24 +47,34 @@ const adicionarUsuario = async (req, res) => {
     const { nome, senha, idEstado, email } = req.body
 
     // fazer verificações
-    if (nome == null|| senha == null || idEstado == null || email == null)
+    if (nome == null || senha == null || idEstado == null || email == null ||
+        nome == ""   || senha == ""   || idEstado <= 0    || email == "") 
     {
         return res.status(400).json({msg: 'Certifique-se de preencher todos os dados'})
     }
 
-    // talvez tenha a opção de não fornecer o estado, tem que tratar isso
-    // if (idEstado == null)
-    // {}
-
     try
     {
         const pool = await conectarAoBd()
+
+        const selectResult = await pool.request()
+                                 .input("email", email)
+                                 .query('SELECT * FROM politicaOn.Usuario WHERE email=@email')  
+    
+        if (selectResult.recordset[0] != null)
+        {
+            return res.status(400)
+                      .json({ mensagem: "Este email já está cadastrado" })
+        }
+
         await pool.request()
             .input("nome", sql.VarChar, nome)
             .input("senha", sql.VarChar, senha)
             .input("idEstado", sql.Int, idEstado)
             .input("email", sql.VarChar, email)
             .query('INSERT INTO politicaOn.Usuario (nome, senha, idEstado, email) VALUES (@nome, @senha, @idEstado, @email)')
+        
+        res.json({nome, senha, idEstado, email})    
     }
     catch (erro)
     {
@@ -72,7 +85,7 @@ const adicionarUsuario = async (req, res) => {
 
 // PUT //
 const atualizarUsuario = async (req, res) => {
-    const { nome, senha, idEstado, email } = req.body
+    let { nome, senha, idEstado, email } = req.body
 
     try {
         const { id } = req.params
@@ -90,19 +103,50 @@ const atualizarUsuario = async (req, res) => {
                                       .input("id", id)
                                       .query('SELECT * FROM politicaOn.Usuario WHERE id=@id')
 
-            if (nome == null)
+            if (nome == null || nome == "")
                 nome = usuario.recordset[0].nome
-            if (senha == null)
+            if (senha == null || senha == "")
                 senha = usuario.recordset[0].senha
-            if (idEstado == null)
+            if (idEstado == null || idEstado <= 0)
                 idEstado = usuario.recordset[0].idEstado
-            if (email == null)
+            if (email == null || email == "")
                 email = usuario.recordset[0].email
 
+            await pool
+                .request()
+                .input("nome", sql.VarChar, nome)
+                .input("senha", sql.VarChar, senha)
+                .input("idEstado", sql.Int, idEstado)
+                .input("email", sql.VarChar, email)
+                .input("id", id)
+                .query('UPDATE politicaOn.Usuario SET nome=@nome, senha=@senha, idEstado=@idEstado, email=@email WHERE id=@id')
             
+            res.json({nome, senha, idEstado, email})
         }
     }
     catch(erro){
+        res.status(500)
+        res.send(erro.message)
+    }
+}
+
+// DELETE //
+const excluirUsuario = async (req, res) => {
+    try
+    {
+        const pool = await conectarAoBd()
+
+        const resultado = await pool
+            .request()
+            .input("id", req.params.id)
+            .query('DELETE FROM politicaOn.Usuario WHERE id=@id')
+
+            if (resultado.rowsAffected[0] === 0) return res.sendStatus(404)
+            
+            return res.sendStatus(204)
+    }
+    catch (erro)
+    {
         res.status(500)
         res.send(erro.message)
     }
@@ -112,5 +156,6 @@ module.exports = {
     getUsuarios, 
     getUsuario,
     adicionarUsuario,
-    atualizarUsuario
+    atualizarUsuario,
+    excluirUsuario
 }

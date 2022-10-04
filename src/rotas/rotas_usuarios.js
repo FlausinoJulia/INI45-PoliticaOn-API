@@ -6,14 +6,14 @@ const {
     getUsuarios, 
     adicionarUsuario, 
     getUsuario,
-    atualizarUsuario
+    atualizarUsuario,
+    excluirUsuario
 } = require('../controllers/controller_usuarios')
 
 roteador.get('/usuarios', getUsuarios)   // get usuarios
 roteador.get('/usuarios/:id', getUsuario) // get usuario
 roteador.post('/usuarios', adicionarUsuario) // adiciona um usuario
 roteador.put('/usuarios/:id', atualizarUsuario) // substitui os dados do user
-
-// roteador.delete('/usuarios:id', excluirUsuario) // deleta usuario
+roteador.delete('/usuarios/:id', excluirUsuario) // deleta usuario
 
 module.exports = roteador
