@@ -1,4 +1,5 @@
 const { conectarAoBd, sql } = require('../bd/conexao')
+const bcrypt = require('bcrypt');
 
 // GET ALL // 
 const getUsuarios = async (req, res) => {
@@ -67,14 +68,48 @@ const adicionarUsuario = async (req, res) => {
                       .json({ mensagem: "Este email já está cadastrado" })
         }
 
+        const hashedPassword = await bcrypt.hash(senha, 10);
+
         await pool.request()
             .input("nome", sql.VarChar, nome)
-            .input("senha", sql.VarChar, senha)
+            .input("senha", sql.VarChar, hashedPassword)
             .input("idEstado", sql.Int, idEstado)
             .input("email", sql.VarChar, email)
             .query('INSERT INTO politicaOn.Usuario (nome, senha, idEstado, email) VALUES (@nome, @senha, @idEstado, @email)')
         
         res.json({nome, senha, idEstado, email})    
+    }
+    catch (erro)
+    {
+        res.status(500)
+        res.send(erro.message)
+    }
+}
+
+// LOGIN //
+
+const login = async (req, res) => {
+    try
+    {
+        const email = req.body.email
+
+        const pool = await conectarAoBd()
+        const result = await pool.request()
+                                 .input("email", email)
+                                 .query('SELECT * FROM politicaOn.Usuario WHERE email=@email')
+
+        if (result.recordset[0] == null)
+        {
+            return res.status(404).send('Email incorreto!')
+        }
+        
+        bcrypt.compare(req.body.senha,  result.recordset[0]["senha"], function(err, result) {
+            if (result == true)
+                return res.status(200).send('Login realizado com sucesso!')
+            else 
+                return res.status(401).send('Senha incorreta!');
+        });
+
     }
     catch (erro)
     {
@@ -156,6 +191,7 @@ module.exports = {
     getUsuarios, 
     getUsuario,
     adicionarUsuario,
+    login,
     atualizarUsuario,
     excluirUsuario
 }
