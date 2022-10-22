@@ -9,7 +9,6 @@ async function conectarAoBd ()
       return pool
    }
    catch (erro) {
-      // ver como tratar o erro depois
       console.error(erro);
    }
 }

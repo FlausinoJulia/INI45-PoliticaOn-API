@@ -1,5 +1,7 @@
 const { conectarAoBd, sql } = require('../bd/conexao')
 const bcrypt = require('bcrypt');
+const { Int } = require('mssql');
+const { json } = require('body-parser');
 
 // GET ALL // 
 const getUsuarios = async (req, res) => {
@@ -47,12 +49,13 @@ const adicionarUsuario = async (req, res) => {
 
     const { nome, senha, idEstado, email } = req.body
 
-    // fazer verificações
     if (nome == null || senha == null || idEstado == null || email == null ||
         nome == ""   || senha == ""   || idEstado <= 0    || email == "") 
     {
         return res.status(400).json({msg: 'Certifique-se de preencher todos os dados'})
     }
+
+    
 
     try
     {
@@ -105,11 +108,15 @@ const login = async (req, res) => {
         
         bcrypt.compare(req.body.senha,  result.recordset[0]["senha"], function(err, result) {
             if (result == true)
-                return res.status(200).send('Login realizado com sucesso!')
+            {
+                const idUser = result.recordset[0]['id']
+                // ou
+                //return result.recordset[0]['id'];
+                return res.status(200).send('Login realizado com sucesso!').json({json: idUser})
+            }
             else 
                 return res.status(401).send('Senha incorreta!');
         });
-
     }
     catch (erro)
     {
