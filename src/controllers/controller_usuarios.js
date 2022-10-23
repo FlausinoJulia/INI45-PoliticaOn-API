@@ -44,6 +44,26 @@ const getUsuario = async (req, res) => {
     }
 }
 
+function emailValido(email) {
+    // pegamos a parte da string correspondente ao usuario (tudo antes do @)
+    usuario = email.substring(0, email.indexOf("@")) 
+    // pegamos a parte da string correspondente ao dominio (tudo depois do @)
+    dominio = email.substring(email.indexOf("@") + 1, email.length);
+    
+    if ((usuario.length >=1) &&      // usuario tem pelo menos um caractere?
+        (dominio.length >=3) &&      // dominio tem pelo menos 3 caracteres?
+        (usuario.search("@")==-1) && // tem @?
+        (dominio.search("@")==-1) && // tem @?
+        (usuario.search(" ")==-1) && // verifica se tem espaço em branco
+        (dominio.search(" ")==-1) && // verifica se tem espaço em branco
+        (dominio.search(".")!=-1) && // verifica se tem pelo menos um ponto
+        (dominio.indexOf(".") >=1)&& // vê se o ponto não está no começo
+        (dominio.lastIndexOf(".") < dominio.length - 1)) // vê se o ponto não está final
+        return true
+    else
+        return false
+}
+
 // POST // 
 const adicionarUsuario = async (req, res) => {
 
@@ -55,7 +75,8 @@ const adicionarUsuario = async (req, res) => {
         return res.status(400).json({msg: 'Certifique-se de preencher todos os dados'})
     }
 
-    
+    if (!emailValido(email)) 
+        return res.status(422).json({msg: 'Email inválido!'})
 
     try
     {
@@ -64,11 +85,11 @@ const adicionarUsuario = async (req, res) => {
         const selectResult = await pool.request()
                                  .input("email", email)
                                  .query('SELECT * FROM politicaOn.Usuario WHERE email=@email')  
-    
+
         if (selectResult.recordset[0] != null)
         {
-            return res.status(400)
-                      .json({ mensagem: "Este email já está cadastrado" })
+            return res.status(409)
+                      .json({msg: "Este email já está cadastrado" })
         }
 
         const hashedPassword = await bcrypt.hash(senha, 10);
@@ -90,30 +111,27 @@ const adicionarUsuario = async (req, res) => {
 }
 
 // LOGIN //
-
 const login = async (req, res) => {
     try
     {
         const email = req.body.email
 
         const pool = await conectarAoBd()
-        const result = await pool.request()
+        const resultado = await pool.request()
                                  .input("email", email)
                                  .query('SELECT * FROM politicaOn.Usuario WHERE email=@email')
 
-        if (result.recordset[0] == null)
+        if (resultado.recordset[0] == null)
         {
             return res.status(404).send('Email incorreto!')
         }
         
-        bcrypt.compare(req.body.senha,  result.recordset[0]["senha"], function(err, result) {
+        bcrypt.compare(req.body.senha,  resultado.recordset[0]["senha"], function(err, result) {
             if (result == true)
             {
-                const idUser = result.recordset[0]['id']
-                // ou
-                //return result.recordset[0]['id'];
-                return res.status(200).send('Login realizado com sucesso!').json({json: idUser})
+                return res.status(200).json(resultado.recordset[0])
             }
+                
             else 
                 return res.status(401).send('Senha incorreta!');
         });
